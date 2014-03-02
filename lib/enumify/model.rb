@@ -32,17 +32,20 @@ module Enumify
       end
 
       vals.each do |val|
-        raise "Collision in enum values method #{val}" if respond_to?("#{val.to_s}?") or respond_to?("#{val.to_s}!") or respond_to?("#{val.to_s}")
 
-        define_method "#{val.to_s}?" do
+        accessor_name = get_accessor_name(parameter, val)
+
+        raise "Collision in enum values method #{accessor_name}" if respond_to?("#{accessor_name.to_s}?") or respond_to?("#{accessor_name.to_s}!") or respond_to?("#{accessor_name.to_s}")
+
+        define_method "#{accessor_name.to_s}?" do
             send("#{parameter.to_s}") == val
         end
 
-        define_method "#{val.to_s}!" do
+        define_method "#{accessor_name.to_s}!" do
             send("_set_#{parameter.to_s}", val, true)
         end
 
-        scope val.to_sym, lambda { where(parameter.to_sym => val.to_s) }
+        scope accessor_name.to_sym, lambda { where(parameter.to_sym => val.to_s) }
       end
 
       # We want to first define all the "positive" scopes and only then define
@@ -51,12 +54,20 @@ module Enumify
         # We need to prefix the field with the table name since if this scope will
         # be used in a joined query with other models that have the same enum field then
         # it will fail on ambiguous column name.
-        unless respond_to?("not_#{val}")
-          scope "not_#{val}", lambda { where("#{self.table_name}.#{parameter} != ?", val.to_s) }
+        accessor_name = get_accessor_name(parameter, val)
+
+        unless respond_to?("not_#{accessor_name}")
+          scope "not_#{accessor_name}", lambda { where("#{self.table_name}.#{parameter} != ?", val.to_s) }
         end
       end
 
     end
+
+    private
+
+      def get_accessor_name(parameter, value)
+        "#{parameter}_#{value}"
+      end
 
   end
 
