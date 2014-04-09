@@ -21,9 +21,9 @@ module Enumify
 
         define_method "_set_#{parameter.to_s}" do |value, should_save|
 
-          value = value.to_sym
+          value = (value != nil) ? value.to_sym : nil
           old = read_attribute(parameter) ? read_attribute(parameter).to_sym : nil
-          write_attribute(parameter, value.to_s)
+          write_attribute(parameter, (value != nil) ? value.to_s : nil)
           save if should_save
           send("#{parameter.to_s}_changed", old, value) if respond_to?("#{parameter.to_s}_changed", true) and old != value and !old.nil?
           return value
